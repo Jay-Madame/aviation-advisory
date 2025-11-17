@@ -1,0 +1,8 @@
+python-dotenv
+requests
+numpy
+torchvision
+scikit-learn
+pandas
+nltk
+dataclasses
