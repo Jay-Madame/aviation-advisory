@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 import torch
 import torch.nn as nn
+import os
+import torch.nn.functional as F
 
 is_explosion_detected = False
 is_seismic_anomaly_detected = False
@@ -32,7 +34,6 @@ class SimulationState:
             "thermal_signature_detected": self.thermal_signature_detected,
             "trajectory_suspicious": self.trajectory_suspicious
         }
-
 
 def generate_simulation_state() -> SimulationState:
     return SimulationState(
@@ -105,3 +106,60 @@ class ThreatClassifier(nn.Module):
         out = self.relu(out)
         out = self.fc2(out)
         return out
+
+# Define the expected path to the saved model file
+MODEL_FILE_NAME = "threat_classifier_model.pth"
+MODEL_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', MODEL_FILE_NAME)
+
+def get_current_flags_as_binary() -> list:
+    state = generate_simulation_state().to_dict()
+    flag_keys = [
+        "explosion_detected", "seismic_anomaly_detected", 
+        "radar_tracking_anomaly_detected", "satellite_warning_detected", 
+        "comms_blackout_detected", "thermal_signature_detected", 
+        "trajectory_suspicious"
+    ]
+    return [1 if state[key] else 0 for key in flag_keys]
+
+def load_trained_model(path: str = MODEL_FILE_PATH) -> ThreatClassifier:
+    """
+    Initializes the model and loads the trained weights from the specified path.
+    Returns None if the file is not found.
+    """
+    model = ThreatClassifier(input_size=8, num_classes=3)
+    try:
+        model.load_state_dict(torch.load(path))
+        model.eval()
+        return model
+    except FileNotFoundError:
+        print(f"🛑 WARNING: Trained model not found at {path}. Threat prediction unavailable.")
+        return None
+    except Exception as e:
+        print(f"🛑 ERROR: Failed to load model weights: {e}")
+        return None
+
+# Load the model once when the module is imported
+LOADED_MODEL = load_trained_model()
+
+
+def predict_threat_level(binary_flags: list, geo_score: float, model: ThreatClassifier = LOADED_MODEL) -> int:
+    """
+    Predicts the threat class (0, 1, or 2) using the loaded PyTorch model.
+    """
+    if model is None:
+        return -1 # Indicates prediction failure
+    
+    # Prepare input tensor: [7 flags, 1 score]
+    flags_tensor = torch.tensor(binary_flags, dtype=torch.float32)
+    score_tensor = torch.tensor([geo_score], dtype=torch.float32)
+    input_vector = torch.cat((flags_tensor, score_tensor)).unsqueeze(0)
+    
+    # Run inference
+    with torch.no_grad():
+        output = model(input_vector)
+        # Convert logits to probability distribution
+        probabilities = F.softmax(output, dim=1)
+        # Get the class with the highest probability
+        predicted_class = torch.argmax(probabilities, dim=1).item()
+        
+    return predicted_class
