@@ -30,25 +30,42 @@ def set_simulation_flags_based_on_score(tension_score: float):
 
 
 def run_threat_assessment(average_tension_score: float):
+    
     # Get the current flags that were just set by the score logic
     real_flags_snapshot = sim_core.get_current_flags_as_binary()
     print(f"    * Snapshot of Real Flags: {real_flags_snapshot}")
     
-    # Define a hypothetical attack scenario: attacker zeroes out the first three flags
-    attack_flags = [
+    print("\n--- 1. CYBER ATTACK SCENARIO: MASKING THE THREAT (False Negative Test) ---")
+    
+    # SCENARIO A: Attacker zeros out the first three critical flags
+    attack_flags_masking = [
         0, 0, 0, 
         real_flags_snapshot[3], real_flags_snapshot[4], real_flags_snapshot[5], real_flags_snapshot[6]
     ]
     
-    print(f"    * Hypothetical Attacker Input: {attack_flags}")
+    print(f"    * Masking Attacker Input: {attack_flags_masking}")
 
-    final_threat_report = cas.simulate_nuclear_scenarios(
+    report_masking = cas.simulate_nuclear_scenarios(
         current_geo_score=average_tension_score,
-        attack_flags=attack_flags
+        attack_flags=attack_flags_masking
     )
+    pprint.pprint(report_masking)
+
+    print("\n--- 2. CYBER ATTACK SCENARIO: INJECTING FALSE ALERT (False Positive Test) ---")
+
+    # SCENARIO B: Attacker sets the first three flags to TRUE regardless of the real state
+    attack_flags_injecting = [
+        1, 1, 1, 
+        real_flags_snapshot[3], real_flags_snapshot[4], real_flags_snapshot[5], real_flags_snapshot[6]
+    ]
+
+    print(f"    * Injecting Attacker Input: {attack_flags_injecting}")
     
-    print("\n--- 🚨 FINAL THREAT ASSESSMENT REPORT (ML Analysis) ---")
-    pprint.pprint(final_threat_report)
+    report_injecting = cas.simulate_nuclear_scenarios(
+        current_geo_score=average_tension_score,
+        attack_flags=attack_flags_injecting
+    )
+    pprint.pprint(report_injecting)
 
 
 def main():

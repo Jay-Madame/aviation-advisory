@@ -132,10 +132,10 @@ def load_trained_model(path: str = MODEL_FILE_PATH) -> ThreatClassifier:
         model.eval()
         return model
     except FileNotFoundError:
-        print(f"🛑 WARNING: Trained model not found at {path}. Threat prediction unavailable.")
+        print(f"WARNING: Trained model not found at {path}. Threat prediction unavailable.")
         return None
     except Exception as e:
-        print(f"🛑 ERROR: Failed to load model weights: {e}")
+        print(f"ERROR: Failed to load model weights: {e}")
         return None
 
 # Load the model once when the module is imported
