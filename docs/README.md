@@ -4,7 +4,7 @@
 
 ### 1. Clonse the Repository
 
-``git clone https://github.com/Jay-Madame/Emotion-Aware-AI-Chatbot.git``<br>
+``git clone https://github.com/Jay-Madame/aviation-advisory.git``<br>
 ``cd aviation-advisory``
 
 
